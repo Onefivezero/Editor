@@ -12,12 +12,13 @@ class MainWindow(QMainWindow):
 
         super(MainWindow, self).__init__(*args, **kwargs)
         
-        #Metin kutusu ve layout olusturma
+        #Metin kutusu, dugmeler, ve layout olusturma
         layout = QVBoxLayout()
         layout2 = QHBoxLayout()
         self.editor = QPlainTextEdit()
         self.button1 = QPushButton("Buton1")
         self.button2 = QPushButton("Buton2")
+        self.button1.clicked.connect(self.run_file)
 
         #Font belirleme
         fixedfont = QFontDatabase.systemFont(QFontDatabase.FixedFont)
@@ -142,8 +143,7 @@ class MainWindow(QMainWindow):
         self.show()
 
     #Takip sistemi(calismiyor)
-    def keyPressEvent(self, event):
-        print('1')
+     
     
     #Hata belirtme penceresi(?)
     def dialog_critical(self, s):
@@ -169,6 +169,12 @@ class MainWindow(QMainWindow):
                 self.editor.setPlainText(text)
                 self.update_title()
 
+    #Kod calistir
+    def run_file(self):
+        self.file_saveas()
+        command = "py " + self.path
+        os.system(command)
+    
     #Dosya kaydetme
     def file_save(self):
         if self.path is None:
