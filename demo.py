@@ -49,6 +49,12 @@ class MainWindow(QMainWindow):
         self.addToolBar(file_toolbar)
         file_menu = self.menuBar().addMenu("&File")
 
+        #Komut calistirma, toolbara ekleme, ve fonksiyona baglama
+        run_action = QAction(QIcon(os.path.join('images', 'run.svg')), "Run", self)
+        run_action.setStatusTip("Run the code")
+        run_action.triggered.connect(self.run_file)
+        file_toolbar.addAction(run_action)
+
         #Dosya acma islemi ekleme, bu islemi toolbar ve menuye baglama, ve bu islemi bir fonksiyona baglama
         #Icon kodu olmadan kod nedense calismiyor, ama verilen yerde icon dosyasi yoksa bile kod calisiyor
         open_file_action = QAction(QIcon(os.path.join('images', 'blue-folder-open-document.png')), "Open file...", self)
@@ -172,6 +178,8 @@ class MainWindow(QMainWindow):
     #Kod calistir
     def run_file(self):
         self.file_saveas()
+        if not self.path:
+            return #Eger dosya kaydetme iptal olursa ve path bossa komut calismayacak
         command = "py " + self.path + " & pause"
         os.system(command)
     
