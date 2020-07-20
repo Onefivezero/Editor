@@ -172,7 +172,7 @@ class MainWindow(QMainWindow):
     #Kod calistir
     def run_file(self):
         self.file_saveas()
-        command = "py " + self.path
+        command = "py " + self.path + " & pause"
         os.system(command)
     
     #Dosya kaydetme
