@@ -18,7 +18,6 @@ class MainWindow(QMainWindow):
         self.editor = QPlainTextEdit()
         self.button1 = QPushButton("Buton1")
         self.button2 = QPushButton("Buton2")
-        self.button1.clicked.connect(self.run_file)
 
         #Font belirleme
         fixedfont = QFontDatabase.systemFont(QFontDatabase.FixedFont)
