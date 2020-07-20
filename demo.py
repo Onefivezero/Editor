@@ -6,16 +6,18 @@ from PyQt5.QtPrintSupport import *
 import os
 import sys
 
-
 class MainWindow(QMainWindow):
 
     def __init__(self, *args, **kwargs):
 
         super(MainWindow, self).__init__(*args, **kwargs)
-
+        
         #Metin kutusu ve layout olusturma
         layout = QVBoxLayout()
+        layout2 = QHBoxLayout()
         self.editor = QPlainTextEdit()
+        self.button1 = QPushButton("Buton1")
+        self.button2 = QPushButton("Buton2")
 
         #Font belirleme
         fixedfont = QFontDatabase.systemFont(QFontDatabase.FixedFont)
@@ -25,14 +27,17 @@ class MainWindow(QMainWindow):
         #Default olarak yolu bos yapma
         self.path = None
 
-        #Layouta metin kutusunu ekleme
+        #Layouta metin kutusunu ve butonu ekleme
         layout.addWidget(self.editor)
+        layout2.addWidget(self.button1)
+        layout2.addWidget(self.button2)
+        layout.addLayout(layout2)
 
         #Ana widget ekleme, layoutu bu widgeta ekleme, ve metin kutusunu bu widgeta yerlestirme
         widget = QWidget()
         widget.setLayout(layout)
         self.setCentralWidget(widget)
-
+        
         #Durum cubugu ekleme
         self.status = QStatusBar()
         self.setStatusBar(self.status)
@@ -136,6 +141,10 @@ class MainWindow(QMainWindow):
         self.update_title()
         self.show()
 
+    #Takip sistemi(calismiyor)
+    def keyPressEvent(self, event):
+        print('1')
+    
     #Hata belirtme penceresi(?)
     def dialog_critical(self, s):
         dlg = QMessageBox(self)
