@@ -171,6 +171,14 @@ class MainWindow(QMainWindow):
                 key_pressed = "DELETE"
             elif(event.key() == Qt.Key_Control):
                 key_pressed = "CTRL"
+            elif(event.key() == Qt.Key_Up):
+                key_pressed = "UP"
+            elif(event.key() == Qt.Key_Down):
+                key_pressed = "DOWN"
+            elif(event.key() == Qt.Key_Left):
+                key_pressed = "LEFT"
+            elif(event.key() == Qt.Key_Right):
+                key_pressed = "RIGHT"
             else:
                 key_pressed = event.text()
             log_file = open("log.txt", "a")
