@@ -2,6 +2,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtPrintSupport import *
+from datetime import datetime
 
 import os
 import sys
@@ -16,6 +17,7 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout()
         layout2 = QHBoxLayout()
         self.editor = QPlainTextEdit()
+        self.editor.installEventFilter(self)
         self.button1 = QPushButton("Buton1")
         self.button2 = QPushButton("Buton2")
 
@@ -147,8 +149,24 @@ class MainWindow(QMainWindow):
         self.update_title()
         self.show()
 
-    #Takip sistemi(calismiyor)
-     
+    #Takip sistemi
+    def eventFilter(self, source, event):
+        if (event.type() == QEvent.KeyPress and
+            source is self.editor):
+            now = datetime.now()
+            now_string = now.strftime("%d/%m/%Y %H:%M:%S.%f")
+            if(event.key() == Qt.Key_Tab):
+                key_pressed = "TAB"
+            elif(event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return):
+                key_pressed = "ENTER"
+            else:
+                key_pressed = event.text()
+            log_file = open("log.txt", "a")
+            log_line = now_string + " :" + key_pressed + "\n"
+            log_file.write(log_line)
+            return False
+        return super(MainWindow, self).eventFilter(source, event)
+
     
     #Hata belirtme penceresi(?)
     def dialog_critical(self, s):
@@ -230,7 +248,8 @@ class MainWindow(QMainWindow):
 
     #Program baslangic
 if __name__ == '__main__':
-
+    
+    
     app = QApplication(sys.argv)
     app.setApplicationName("Deneme Editor")
 
