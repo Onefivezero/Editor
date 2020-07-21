@@ -159,6 +159,18 @@ class MainWindow(QMainWindow):
                 key_pressed = "TAB"
             elif(event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return):
                 key_pressed = "ENTER"
+            elif(event.key() == Qt.Key_Alt):
+                key_pressed = "ALT"
+            elif(event.key() == Qt.Key_Home):
+                key_pressed = "HOME"
+            elif(event.key() == Qt.Key_Insert):
+                key_pressed = "INSERT"
+            elif(event.key() == Qt.Key_End):
+                key_pressed = "END"
+            elif(event.key() == Qt.Key_Delete):
+                key_pressed = "DELETE"
+            elif(event.key() == Qt.Key_Control):
+                key_pressed = "CTRL"
             else:
                 key_pressed = event.text()
             log_file = open("log.txt", "a")
