@@ -1,6 +1,6 @@
 # Editor
 Demo Editor
 
-Sıradan bir text editörü, butonlar henüz bir fonksiyona bağlanmadığından işlevi yok
+Python kod editörü.
 
-Tuş basılma izleyicisi çalışmıyor, nedeni belirsi
+Editöre yazılanları loga aktarma özelliği ve yazılan kodu çalıştırma özelliği eklendi.
