@@ -12,6 +12,13 @@ class MainWindow(QMainWindow):
     def __init__(self, *args, **kwargs):
 
         super(MainWindow, self).__init__(*args, **kwargs)
+
+        #veri dosyasi icin liste
+
+        #log dosyalari icin isimlendirme
+        self.log_time = datetime.now()
+        self.log_time_string = self.log_time.strftime("%d.%m.%Y %H.%M.%S")
+        print(self.log_time)
         
         #Metin kutusu, dugmeler, ve layout olusturma
         layout = QVBoxLayout()
@@ -145,10 +152,21 @@ class MainWindow(QMainWindow):
         wrap_action.triggered.connect(self.edit_toggle_wrap)
         edit_menu.addAction(wrap_action)
 
+        timer = QTimer(self)
+        timer.timeout.connect(self.update_data)
+        timer.start(1000)
+        
         #Basligi yenile ve pencereyi goster
         self.update_title()
         self.show()
 
+    #Veri guncelleme
+    def update_data(self):
+        data_file = open('DATA %s.txt' % self.log_time_string, "a")
+        data_line = str(len(self.editor.toPlainText())) + "\n"
+        data_file.write(data_line)
+        data_file.close()
+    
     #Takip sistemi
     def eventFilter(self, source, event):
         if (event.type() == QEvent.KeyPress and
@@ -181,9 +199,10 @@ class MainWindow(QMainWindow):
                 key_pressed = "RIGHT"
             else:
                 key_pressed = event.text()
-            log_file = open("log.txt", "a")
+            log_file = open('LOG %s.txt' % self.log_time_string, "a")
             log_line = now_string + " :" + key_pressed + "\n"
             log_file.write(log_line)
+            log_file.close()
             return False
         return super(MainWindow, self).eventFilter(source, event)
 
@@ -268,7 +287,7 @@ class MainWindow(QMainWindow):
 
     #Program baslangic
 if __name__ == '__main__':
-    
+
     
     app = QApplication(sys.argv)
     app.setApplicationName("Deneme Editor")
