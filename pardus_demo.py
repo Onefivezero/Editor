@@ -242,7 +242,7 @@ class MainWindow(QMainWindow):
 
     #Kod calistir
     def run_file(self):
-        self.file_saveas()
+        self.file_save()
         if not self.path:
             return #Eger dosya kaydetme iptal olursa ve path bossa komut calismayacak
         command = "python3 " + self.path
