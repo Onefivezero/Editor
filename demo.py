@@ -1,3 +1,4 @@
+from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
@@ -152,11 +153,27 @@ class MainWindow(QMainWindow):
         timer = QTimer(self)
         timer.timeout.connect(self.update_data)
         timer.start(1000)
+
+        #Menuleri log fonksiyonuna baglama
+        edit_toolbar.actionTriggered[QtWidgets.QAction].connect(self.log_menu)
+        file_toolbar.actionTriggered[QtWidgets.QAction].connect(self.log_menu)
+        #edit_menu.actionTriggered[QtWidgets.QAction].connect(self.log_menu)
+        #file_menu.actionTriggered[QtWidgets.QAction].connect(self.log_menu)
         
         #Basligi yenile ve pencereyi goster
         self.update_title()
         self.show()
 
+    #Menuler icin log fonskiyonu
+    def log_menu(self, selection):
+         now = datetime.now()
+         now_string = now.strftime("%d/%m/%Y %H:%M:%S.%f")
+         
+         log_file = open('LOG %s.txt' % self.log_time_string, "a")
+         log_line = now_string + ":" + message + "\n"
+         log_file.write(log_line)
+         log_file.close()
+    
     #Veri guncelleme
     def update_data(self):
         now = datetime.now()
