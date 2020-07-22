@@ -159,8 +159,10 @@ class MainWindow(QMainWindow):
 
     #Veri guncelleme
     def update_data(self):
+        now = datetime.now()
+        now_string = now.strftime("%d/%m/%Y %H:%M:%S.%f")
         data_file = open('DATA %s.txt' % self.log_time_string, "a")
-        data_line = str(len(self.editor.toPlainText())) + "\n"
+        data_line = now_string + ": " + str(len(self.editor.toPlainText())) + "\n"
         data_file.write(data_line)
         data_file.close()
     
