@@ -16,7 +16,6 @@ class MainWindow(QMainWindow):
         #log dosyalari icin isimlendirme
         self.log_time = datetime.now()
         self.log_time_string = self.log_time.strftime("%d.%m.%Y %H.%M.%S")
-        print(self.log_time)
         
         #Metin kutusu, dugmeler, ve layout olusturma
         layout = QVBoxLayout()
@@ -205,10 +204,12 @@ class MainWindow(QMainWindow):
             modifiers = int(event.modifiers())
             if (modifiers and modifiers & MOD_MASK == modifiers and event.key() > 0 and event.key() != Qt.Key_Shift and event.key() != Qt.Key_Alt and event.key() != Qt.Key_Control and event.key() != Qt.Key_Meta):
                 key_pressed = QKeySequence(modifiers + event.key()).toString()
-            log_file = open('LOG %s.txt' % self.log_time_string, "a")
-            log_line = now_string + " :" + key_pressed + "\n"
-            log_file.write(log_line)
-            log_file.close()
+            #Tus kombinasyonlarinda modifier tusu logda gozukmesin
+            if(event.key() != Qt.Key_Shift and event.key() != Qt.Key_Alt and event.key() != Qt.Key_Control and event.key() != Qt.Key_Meta):
+                log_file = open('LOG %s.txt' % self.log_time_string, "a")
+                log_line = now_string + " :" + key_pressed + "\n"
+                log_file.write(log_line)
+                log_file.close()
             return False
         return super(MainWindow, self).eventFilter(source, event)
 
