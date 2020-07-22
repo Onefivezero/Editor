@@ -13,8 +13,6 @@ class MainWindow(QMainWindow):
 
         super(MainWindow, self).__init__(*args, **kwargs)
 
-        #veri dosyasi icin liste
-
         #log dosyalari icin isimlendirme
         self.log_time = datetime.now()
         self.log_time_string = self.log_time.strftime("%d.%m.%Y %H.%M.%S")
@@ -144,7 +142,7 @@ class MainWindow(QMainWindow):
         #edit menusune ayirici ekleme
         edit_menu.addSeparator()
 
-        #
+        #Toggle wrap
         wrap_action = QAction(QIcon(os.path.join('images', 'arrow-continue.png')), "Wrap text to window", self)
         wrap_action.setStatusTip("Toggle wrap text to window")
         wrap_action.setCheckable(True)
@@ -197,6 +195,10 @@ class MainWindow(QMainWindow):
                 key_pressed = "LEFT"
             elif(event.key() == Qt.Key_Right):
                 key_pressed = "RIGHT"
+            elif(event.key() == Qt.Key_Escape):
+                key_pressed = "ESC"
+            elif(event.key() == Qt.Key_Backspace):
+                key_pressed = "BCKSPC"
             else:
                 key_pressed = event.text()
             log_file = open('LOG %s.txt' % self.log_time_string, "a")
