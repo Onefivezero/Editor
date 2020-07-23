@@ -3,4 +3,4 @@ Demo Editor
 
 Python kod editörü.
 
-Yapılan her(muhtemelen) işlemi kaydetiyor ve belirli aralıklarla yazılan kodun uzunluğunu ölçüyor.
+Yapılan her(muhtemelen) işlemi kaydediyor ve belirli aralıklarla yazılan kodun uzunluğunu ölçüyor.
