@@ -23,8 +23,10 @@ class MainWindow(QMainWindow):
         layout2 = QHBoxLayout()
         self.editor = QPlainTextEdit()
         self.editor.installEventFilter(self)
-        self.button1 = QPushButton("Buton1")
-        self.button2 = QPushButton("Buton2")
+        self.button1 = QPushButton("Light mode")
+        self.button2 = QPushButton("Dark mode")
+        self.button1.setStyleSheet("background-color: white;  color:black; border: 1px solid gray; padding:5px 10px")
+        self.button2.setStyleSheet("background-color: black;  color:white; border: 1px solid gray; padding:5px 10px")
 
         #Font belirleme
         fixedfont = QFontDatabase.systemFont(QFontDatabase.FixedFont)
@@ -162,6 +164,12 @@ class MainWindow(QMainWindow):
         wrap_action.triggered.connect(self.log_menu)
         edit_menu.addAction(wrap_action)
 
+        #EXPERIMENTAL
+        self.button1.clicked.connect(self.light_theme)
+        self.button2.clicked.connect(self.dark_theme)
+        self.button1.clicked.connect(self.log_button)
+        self.button2.clicked.connect(self.log_button)
+        
         timer = QTimer(self)
         timer.timeout.connect(self.update_data)
         timer.start(1000)
@@ -170,15 +178,33 @@ class MainWindow(QMainWindow):
         self.update_title()
         self.show()
 
+    #Light theme
+    def light_theme(self):
+        self.editor.setStyleSheet("background-color: white; color:black")
+
+    #Dark theme
+    def dark_theme(self):
+        self.editor.setStyleSheet("background-color: black; color:white")
+    
+    #Dugmeler icin log fonksiyonu
+    def log_button(self):
+        now = datetime.now()
+        now_string = now.strftime("%d/%m/%Y %H:%M:%S.%f")
+        message = self.sender().text()
+        log_file = open('LOG %s.txt' % self.log_time_string, "a")
+        log_line = now_string + ": BUTTON:" + message + "\n"
+        log_file.write(log_line)
+        log_file.close()
+
     #Menuler icin log fonskiyonu
     def log_menu(self):
-         now = datetime.now()
-         now_string = now.strftime("%d/%m/%Y %H:%M:%S.%f")
-         message = self.sender().text()
-         log_file = open('LOG %s.txt' % self.log_time_string, "a")
-         log_line = now_string + ": ACTION:" + message + "\n"
-         log_file.write(log_line)
-         log_file.close()
+        now = datetime.now()
+        now_string = now.strftime("%d/%m/%Y %H:%M:%S.%f")
+        message = self.sender().text()
+        log_file = open('LOG %s.txt' % self.log_time_string, "a")
+        log_line = now_string + ": ACTION:" + message + "\n"
+        log_file.write(log_line)
+        log_file.close()
     
     #Veri guncelleme
     def update_data(self):
