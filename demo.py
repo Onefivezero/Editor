@@ -59,6 +59,7 @@ class MainWindow(QMainWindow):
         run_action = QAction(QIcon(os.path.join('images', 'run.svg')), "Run", self)
         run_action.setStatusTip("Run the code")
         run_action.triggered.connect(self.run_file)
+        run_action.triggered.connect(self.log_menu)
         file_toolbar.addAction(run_action)
 
         #Dosya acma islemi ekleme, bu islemi toolbar ve menuye baglama, ve bu islemi bir fonksiyona baglama
@@ -66,6 +67,7 @@ class MainWindow(QMainWindow):
         open_file_action = QAction(QIcon(os.path.join('images', 'blue-folder-open-document.png')), "Open file...", self)
         open_file_action.setStatusTip("Open file")
         open_file_action.triggered.connect(self.file_open)
+        open_file_action.triggered.connect(self.log_menu)
         file_menu.addAction(open_file_action)
         file_toolbar.addAction(open_file_action)
 
@@ -73,6 +75,7 @@ class MainWindow(QMainWindow):
         save_file_action = QAction(QIcon(os.path.join('images', 'disk.png')), "Save", self)
         save_file_action.setStatusTip("Save current page")
         save_file_action.triggered.connect(self.file_save)
+        save_file_action.triggered.connect(self.log_menu)
         file_menu.addAction(save_file_action)
         file_toolbar.addAction(save_file_action)
 
@@ -80,6 +83,7 @@ class MainWindow(QMainWindow):
         saveas_file_action = QAction(QIcon(os.path.join('images', 'disk--pencil.png')), "Save As...", self)
         saveas_file_action.setStatusTip("Save current page to specified file")
         saveas_file_action.triggered.connect(self.file_saveas)
+        saveas_file_action.triggered.connect(self.log_menu)
         file_menu.addAction(saveas_file_action)
         file_toolbar.addAction(saveas_file_action)
 
@@ -87,6 +91,7 @@ class MainWindow(QMainWindow):
         print_action = QAction(QIcon(os.path.join('images', 'printer.png')), "Print...", self)
         print_action.setStatusTip("Print current page")
         print_action.triggered.connect(self.file_print)
+        print_action.triggered.connect(self.log_menu)
         file_menu.addAction(print_action)
         file_toolbar.addAction(print_action)
 
@@ -100,12 +105,14 @@ class MainWindow(QMainWindow):
         undo_action = QAction(QIcon(os.path.join('images', 'arrow-curve-180-left.png')), "Undo", self)
         undo_action.setStatusTip("Undo last change")
         undo_action.triggered.connect(self.editor.undo)
+        undo_action.triggered.connect(self.log_menu)
         edit_menu.addAction(undo_action)
 
         #Tekrar yap islemi ekleme, bu islemi toolbar ve menuye baglama, ve bu islemi bir fonksiyona baglama
         redo_action = QAction(QIcon(os.path.join('images', 'arrow-curve.png')), "Redo", self)
         redo_action.setStatusTip("Redo last change")
         redo_action.triggered.connect(self.editor.redo)
+        redo_action.triggered.connect(self.log_menu)
         edit_toolbar.addAction(redo_action)
         edit_menu.addAction(redo_action)
 
@@ -116,6 +123,7 @@ class MainWindow(QMainWindow):
         cut_action = QAction(QIcon(os.path.join('images', 'scissors.png')), "Cut", self)
         cut_action.setStatusTip("Cut selected text")
         cut_action.triggered.connect(self.editor.cut)
+        cut_action.triggered.connect(self.log_menu)
         edit_toolbar.addAction(cut_action)
         edit_menu.addAction(cut_action)
 
@@ -123,6 +131,7 @@ class MainWindow(QMainWindow):
         copy_action = QAction(QIcon(os.path.join('images', 'document-copy.png')), "Copy", self)
         copy_action.setStatusTip("Copy selected text")
         copy_action.triggered.connect(self.editor.copy)
+        copy_action.triggered.connect(self.log_menu)
         edit_toolbar.addAction(copy_action)
         edit_menu.addAction(copy_action)
 
@@ -130,6 +139,7 @@ class MainWindow(QMainWindow):
         paste_action = QAction(QIcon(os.path.join('images', 'clipboard-paste-document-text.png')), "Paste", self)
         paste_action.setStatusTip("Paste from clipboard")
         paste_action.triggered.connect(self.editor.paste)
+        paste_action.triggered.connect(self.log_menu)
         edit_toolbar.addAction(paste_action)
         edit_menu.addAction(paste_action)
 
@@ -137,6 +147,7 @@ class MainWindow(QMainWindow):
         select_action = QAction(QIcon(os.path.join('images', 'selection-input.png')), "Select all", self)
         select_action.setStatusTip("Select all text")
         select_action.triggered.connect(self.editor.selectAll)
+        select_action.triggered.connect(self.log_menu)
         edit_menu.addAction(select_action)
 
         #edit menusune ayirici ekleme
@@ -148,29 +159,24 @@ class MainWindow(QMainWindow):
         wrap_action.setCheckable(True)
         wrap_action.setChecked(True)
         wrap_action.triggered.connect(self.edit_toggle_wrap)
+        wrap_action.triggered.connect(self.log_menu)
         edit_menu.addAction(wrap_action)
 
         timer = QTimer(self)
         timer.timeout.connect(self.update_data)
         timer.start(1000)
-
-        #Menuleri log fonksiyonuna baglama
-        edit_toolbar.actionTriggered[QtWidgets.QAction].connect(self.log_menu)
-        file_toolbar.actionTriggered[QtWidgets.QAction].connect(self.log_menu)
-        #edit_menu.actionTriggered[QtWidgets.QAction].connect(self.log_menu)
-        #file_menu.actionTriggered[QtWidgets.QAction].connect(self.log_menu)
         
         #Basligi yenile ve pencereyi goster
         self.update_title()
         self.show()
 
     #Menuler icin log fonskiyonu
-    def log_menu(self, selection):
+    def log_menu(self):
          now = datetime.now()
          now_string = now.strftime("%d/%m/%Y %H:%M:%S.%f")
-         
+         message = self.sender().text()
          log_file = open('LOG %s.txt' % self.log_time_string, "a")
-         log_line = now_string + ":" + message + "\n"
+         log_line = now_string + ": ACTION:" + message + "\n"
          log_file.write(log_line)
          log_file.close()
     
