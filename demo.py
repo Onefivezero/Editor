@@ -188,29 +188,35 @@ class MainWindow(QMainWindow):
     
     #Dugmeler icin log fonksiyonu
     def log_button(self):
+        if not os.path.exists('log'):
+            os.makedirs('log')
         now = datetime.now()
         now_string = now.strftime("%d/%m/%Y %H:%M:%S.%f")
         message = self.sender().text()
-        log_file = open('LOG %s.txt' % self.log_time_string, "a")
+        log_file = open('log/LOG %s.txt' % self.log_time_string, "a")
         log_line = now_string + ": BUTTON:" + message + "\n"
         log_file.write(log_line)
         log_file.close()
 
     #Menuler icin log fonskiyonu
     def log_menu(self):
+        if not os.path.exists('log'):
+            os.makedirs('log')
         now = datetime.now()
         now_string = now.strftime("%d/%m/%Y %H:%M:%S.%f")
         message = self.sender().text()
-        log_file = open('LOG %s.txt' % self.log_time_string, "a")
+        log_file = open('log/LOG %s.txt' % self.log_time_string, "a")
         log_line = now_string + ": ACTION:" + message + "\n"
         log_file.write(log_line)
         log_file.close()
     
     #Veri guncelleme
     def update_data(self):
+        if not os.path.exists('data'):
+            os.makedirs('data')
         now = datetime.now()
         now_string = now.strftime("%d/%m/%Y %H:%M:%S.%f")
-        data_file = open('DATA %s.txt' % self.log_time_string, "a")
+        data_file = open('data/DATA %s.txt' % self.log_time_string, "a")
         data_line = now_string + ": " + str(len(self.editor.toPlainText())) + "\n"
         data_file.write(data_line)
         data_file.close()
@@ -257,7 +263,9 @@ class MainWindow(QMainWindow):
                 key_pressed = QKeySequence(modifiers + event.key()).toString()
             #Tus kombinasyonlarinda modifier tusu logda gozukmesin
             if(event.key() != Qt.Key_Shift and event.key() != Qt.Key_Alt and event.key() != Qt.Key_Control and event.key() != Qt.Key_Meta):
-                log_file = open('LOG %s.txt' % self.log_time_string, "a")
+                if not os.path.exists('log'):
+                    os.makedirs('log')
+                log_file = open('log/LOG %s.txt' % self.log_time_string, "a")
                 log_line = now_string + " :" + key_pressed + "\n"
                 log_file.write(log_line)
                 log_file.close()
@@ -346,6 +354,10 @@ class MainWindow(QMainWindow):
     #Program baslangic
 if __name__ == '__main__':
 
+    if not os.path.exists('log'):
+        os.makedirs('log')
+    if not os.path.exists('data'):
+        os.makedirs('data')
     
     app = QApplication(sys.argv)
     app.setApplicationName("Deneme Editor")
