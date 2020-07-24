@@ -1,3 +1,4 @@
+import random
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
@@ -17,6 +18,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         #grafik widgeti ve menu olustur
         self.graphWidget = pg.PlotWidget()
+        self.graphWidget.setBackground((255,255,255))
         self.setCentralWidget(self.graphWidget)
         file_menu = self.menuBar().addMenu("&File")
 
@@ -29,6 +31,8 @@ class MainWindow(QtWidgets.QMainWindow):
             
     #Dosya ac
     def file_open(self):
+        cols = "%06x" % random.randint(0, 0xFFFFFF)
+        pen = pg.mkPen(color = cols, width = 5)
         fname, _ = QFileDialog.getOpenFileName(self, "Open file", "", "Text documents (*.txt);All files (*.*)")
         if fname:
             f = open(fname, "r")
@@ -38,7 +42,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 x.rstrip();
                 y = int(x[indx+2:])
                 datas.append(y)
-            self.graphWidget.plot(range(len(datas)), datas)
+            self.graphWidget.plot(range(len(datas)), datas, pen = pen)
 
 #Main
 if __name__ == '__main__':
