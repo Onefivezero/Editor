@@ -1,11 +1,185 @@
+from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtPrintSupport import *
+from PyQt5.QtGui import QColor, QTextCharFormat, QFont, QSyntaxHighlighter
 from datetime import datetime
 
 import os
 import sys
+
+#SYNTAX HIGHLIGHT BASLANGIC
+def format(color, style=''):
+    """Return a QTextCharFormat with the given attributes.
+    """
+    _color = QColor()
+    _color.setNamedColor(color)
+
+    _format = QTextCharFormat()
+    _format.setForeground(_color)
+    if 'bold' in style:
+        _format.setFontWeight(QFont.Bold)
+    if 'italic' in style:
+        _format.setFontItalic(True)
+
+    return _format
+
+
+# Syntax styles that can be shared by all languages
+STYLES = {
+    'keyword': format('blue'),
+    'operator': format('red'),
+    'brace': format('darkGray'),
+    'defclass': format('black', 'bold'),
+    'string': format('magenta'),
+    'string2': format('darkMagenta'),
+    'comment': format('darkGreen', 'italic'),
+    'self': format('black', 'italic'),
+    'numbers': format('brown'),
+}
+
+
+class PythonHighlighter (QSyntaxHighlighter):
+    """Syntax highlighter for the Python language.
+    """
+    # Python keywords
+    keywords = [
+        'and', 'assert', 'break', 'class', 'continue', 'def',
+        'del', 'elif', 'else', 'except', 'exec', 'finally',
+        'for', 'from', 'global', 'if', 'import', 'in',
+        'is', 'lambda', 'not', 'or', 'pass', 'print',
+        'raise', 'return', 'try', 'while', 'yield',
+        'None', 'True', 'False',
+    ]
+
+    # Python operators
+    operators = [
+        '=',
+        # Comparison
+        '==', '!=', '<', '<=', '>', '>=',
+        # Arithmetic
+        '\+', '-', '\*', '/', '//', '\%', '\*\*',
+        # In-place
+        '\+=', '-=', '\*=', '/=', '\%=',
+        # Bitwise
+        '\^', '\|', '\&', '\~', '>>', '<<',
+    ]
+
+    # Python braces
+    braces = [
+        '\{', '\}', '\(', '\)', '\[', '\]',
+    ]
+    def __init__(self, document):
+        QSyntaxHighlighter.__init__(self, document)
+
+        # Multi-line strings (expression, flag, style)
+        # FIXME: The triple-quotes in these two lines will mess up the
+        # syntax highlighting from this point onward
+        self.tri_single = (QRegExp("'''"), 1, STYLES['string2'])
+        self.tri_double = (QRegExp('"""'), 2, STYLES['string2'])
+
+        rules = []
+
+        # Keyword, operator, and brace rules
+        rules += [(r'\b%s\b' % w, 0, STYLES['keyword'])
+            for w in PythonHighlighter.keywords]
+        rules += [(r'%s' % o, 0, STYLES['operator'])
+            for o in PythonHighlighter.operators]
+        rules += [(r'%s' % b, 0, STYLES['brace'])
+            for b in PythonHighlighter.braces]
+
+        # All other rules
+        rules += [
+            # 'self'
+            (r'\bself\b', 0, STYLES['self']),
+
+            # Double-quoted string, possibly containing escape sequences
+            (r'"[^"\\]*(\\.[^"\\]*)*"', 0, STYLES['string']),
+            # Single-quoted string, possibly containing escape sequences
+            (r"'[^'\\]*(\\.[^'\\]*)*'", 0, STYLES['string']),
+
+            # 'def' followed by an identifier
+            (r'\bdef\b\s*(\w+)', 1, STYLES['defclass']),
+            # 'class' followed by an identifier
+            (r'\bclass\b\s*(\w+)', 1, STYLES['defclass']),
+
+            # From '#' until a newline
+            (r'#[^\n]*', 0, STYLES['comment']),
+
+            # Numeric literals
+            (r'\b[+-]?[0-9]+[lL]?\b', 0, STYLES['numbers']),
+            (r'\b[+-]?0[xX][0-9A-Fa-f]+[lL]?\b', 0, STYLES['numbers']),
+            (r'\b[+-]?[0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\b', 0, STYLES['numbers']),
+        ]
+
+        # Build a QRegExp for each pattern
+        self.rules = [(QRegExp(pat), index, fmt)
+            for (pat, index, fmt) in rules]
+
+
+    def highlightBlock(self, text):
+        """Apply syntax highlighting to the given block of text.
+        """
+        # Do other syntax formatting
+        for expression, nth, format in self.rules:
+            index = expression.indexIn(text, 0)
+
+            while index >= 0:
+                # We actually want the index of the nth match
+                index = expression.pos(nth)
+                length = len(expression.cap(nth))
+                self.setFormat(index, length, format)
+                index = expression.indexIn(text, index + length)
+
+        self.setCurrentBlockState(0)
+
+        # Do multi-line strings
+        in_multiline = self.match_multiline(text, *self.tri_single)
+        if not in_multiline:
+            in_multiline = self.match_multiline(text, *self.tri_double)
+
+
+    def match_multiline(self, text, delimiter, in_state, style):
+        """Do highlighting of multi-line strings. ``delimiter`` should be a
+        ``QRegExp`` for triple-single-quotes or triple-double-quotes, and
+        ``in_state`` should be a unique integer to represent the corresponding
+        state changes when inside those strings. Returns True if we're still
+        inside a multi-line string when this function is finished.
+        """
+        # If inside triple-single quotes, start at 0
+        if self.previousBlockState() == in_state:
+            start = 0
+            add = 0
+        # Otherwise, look for the delimiter on this line
+        else:
+            start = delimiter.indexIn(text)
+            # Move past this match
+            add = delimiter.matchedLength()
+
+        # As long as there's a delimiter match on this line...
+        while start >= 0:
+            # Look for the ending delimiter
+            end = delimiter.indexIn(text, start + add)
+            # Ending delimiter on this line?
+            if end >= add:
+                length = end - start + add + delimiter.matchedLength()
+                self.setCurrentBlockState(0)
+            # No; multi-line string
+            else:
+                self.setCurrentBlockState(in_state)
+                length = text.length() - start + add
+            # Apply formatting
+            self.setFormat(start, length, style)
+            # Look for the next match
+            start = delimiter.indexIn(text, start + length)
+
+        # Return True if still inside a multi-line string, False otherwise
+        if self.currentBlockState() == in_state:
+            return True
+        else:
+            return False
+#SYNTAX BITIS
 
 class MainWindow(QMainWindow):
 
@@ -22,14 +196,19 @@ class MainWindow(QMainWindow):
         layout2 = QHBoxLayout()
         self.editor = QPlainTextEdit()
         self.editor.installEventFilter(self)
-        self.button1 = QPushButton("Buton1")
-        self.button2 = QPushButton("Buton2")
+        self.button1 = QPushButton("Light mode")
+        self.button2 = QPushButton("Dark mode")
+        self.button1.setStyleSheet("background-color: white;  color:black; border: 1px solid gray; padding:5px 10px")
+        self.button2.setStyleSheet("background-color: black;  color:white; border: 1px solid gray; padding:5px 10px")
 
         #Font belirleme
         fixedfont = QFontDatabase.systemFont(QFontDatabase.FixedFont)
         fixedfont.setPointSize(12)
         self.editor.setFont(fixedfont)
 
+        #Highlighter
+        self.highlighter = PythonHighlighter(self.editor.document())
+        
         #Default olarak yolu bos yapma
         self.path = None
 
@@ -58,6 +237,7 @@ class MainWindow(QMainWindow):
         run_action = QAction(QIcon(os.path.join('images', 'run.svg')), "Run", self)
         run_action.setStatusTip("Run the code")
         run_action.triggered.connect(self.run_file)
+        run_action.triggered.connect(self.log_menu)
         file_toolbar.addAction(run_action)
 
         #Dosya acma islemi ekleme, bu islemi toolbar ve menuye baglama, ve bu islemi bir fonksiyona baglama
@@ -65,6 +245,7 @@ class MainWindow(QMainWindow):
         open_file_action = QAction(QIcon(os.path.join('images', 'blue-folder-open-document.png')), "Open file...", self)
         open_file_action.setStatusTip("Open file")
         open_file_action.triggered.connect(self.file_open)
+        open_file_action.triggered.connect(self.log_menu)
         file_menu.addAction(open_file_action)
         file_toolbar.addAction(open_file_action)
 
@@ -72,6 +253,7 @@ class MainWindow(QMainWindow):
         save_file_action = QAction(QIcon(os.path.join('images', 'disk.png')), "Save", self)
         save_file_action.setStatusTip("Save current page")
         save_file_action.triggered.connect(self.file_save)
+        save_file_action.triggered.connect(self.log_menu)
         file_menu.addAction(save_file_action)
         file_toolbar.addAction(save_file_action)
 
@@ -79,6 +261,7 @@ class MainWindow(QMainWindow):
         saveas_file_action = QAction(QIcon(os.path.join('images', 'disk--pencil.png')), "Save As...", self)
         saveas_file_action.setStatusTip("Save current page to specified file")
         saveas_file_action.triggered.connect(self.file_saveas)
+        saveas_file_action.triggered.connect(self.log_menu)
         file_menu.addAction(saveas_file_action)
         file_toolbar.addAction(saveas_file_action)
 
@@ -86,6 +269,7 @@ class MainWindow(QMainWindow):
         print_action = QAction(QIcon(os.path.join('images', 'printer.png')), "Print...", self)
         print_action.setStatusTip("Print current page")
         print_action.triggered.connect(self.file_print)
+        print_action.triggered.connect(self.log_menu)
         file_menu.addAction(print_action)
         file_toolbar.addAction(print_action)
 
@@ -99,12 +283,14 @@ class MainWindow(QMainWindow):
         undo_action = QAction(QIcon(os.path.join('images', 'arrow-curve-180-left.png')), "Undo", self)
         undo_action.setStatusTip("Undo last change")
         undo_action.triggered.connect(self.editor.undo)
+        undo_action.triggered.connect(self.log_menu)
         edit_menu.addAction(undo_action)
 
         #Tekrar yap islemi ekleme, bu islemi toolbar ve menuye baglama, ve bu islemi bir fonksiyona baglama
         redo_action = QAction(QIcon(os.path.join('images', 'arrow-curve.png')), "Redo", self)
         redo_action.setStatusTip("Redo last change")
         redo_action.triggered.connect(self.editor.redo)
+        redo_action.triggered.connect(self.log_menu)
         edit_toolbar.addAction(redo_action)
         edit_menu.addAction(redo_action)
 
@@ -115,6 +301,7 @@ class MainWindow(QMainWindow):
         cut_action = QAction(QIcon(os.path.join('images', 'scissors.png')), "Cut", self)
         cut_action.setStatusTip("Cut selected text")
         cut_action.triggered.connect(self.editor.cut)
+        cut_action.triggered.connect(self.log_menu)
         edit_toolbar.addAction(cut_action)
         edit_menu.addAction(cut_action)
 
@@ -122,6 +309,7 @@ class MainWindow(QMainWindow):
         copy_action = QAction(QIcon(os.path.join('images', 'document-copy.png')), "Copy", self)
         copy_action.setStatusTip("Copy selected text")
         copy_action.triggered.connect(self.editor.copy)
+        copy_action.triggered.connect(self.log_menu)
         edit_toolbar.addAction(copy_action)
         edit_menu.addAction(copy_action)
 
@@ -129,6 +317,7 @@ class MainWindow(QMainWindow):
         paste_action = QAction(QIcon(os.path.join('images', 'clipboard-paste-document-text.png')), "Paste", self)
         paste_action.setStatusTip("Paste from clipboard")
         paste_action.triggered.connect(self.editor.paste)
+        paste_action.triggered.connect(self.log_menu)
         edit_toolbar.addAction(paste_action)
         edit_menu.addAction(paste_action)
 
@@ -136,6 +325,7 @@ class MainWindow(QMainWindow):
         select_action = QAction(QIcon(os.path.join('images', 'selection-input.png')), "Select all", self)
         select_action.setStatusTip("Select all text")
         select_action.triggered.connect(self.editor.selectAll)
+        select_action.triggered.connect(self.log_menu)
         edit_menu.addAction(select_action)
 
         #edit menusune ayirici ekleme
@@ -147,8 +337,15 @@ class MainWindow(QMainWindow):
         wrap_action.setCheckable(True)
         wrap_action.setChecked(True)
         wrap_action.triggered.connect(self.edit_toggle_wrap)
+        wrap_action.triggered.connect(self.log_menu)
         edit_menu.addAction(wrap_action)
 
+        #EXPERIMENTAL
+        self.button1.clicked.connect(self.light_theme)
+        self.button2.clicked.connect(self.dark_theme)
+        self.button1.clicked.connect(self.log_button)
+        self.button2.clicked.connect(self.log_button)
+        
         timer = QTimer(self)
         timer.timeout.connect(self.update_data)
         timer.start(1000)
@@ -157,11 +354,45 @@ class MainWindow(QMainWindow):
         self.update_title()
         self.show()
 
-    #Veri guncelleme
-    def update_data(self):
+    #Light theme
+    def light_theme(self):
+        self.editor.setStyleSheet("background-color: white; color:black")
+
+    #Dark theme
+    def dark_theme(self):
+        self.editor.setStyleSheet("background-color: black; color:white")
+    
+    #Dugmeler icin log fonksiyonu
+    def log_button(self):
+        if not os.path.exists('log'):
+            os.makedirs('log')
         now = datetime.now()
         now_string = now.strftime("%d/%m/%Y %H:%M:%S.%f")
-        data_file = open('DATA %s.txt' % self.log_time_string, "a")
+        message = self.sender().text()
+        log_file = open('log\LOG %s.txt' % self.log_time_string, "a")
+        log_line = now_string + ": BUTTON:" + message + "\n"
+        log_file.write(log_line)
+        log_file.close()
+
+    #Menuler icin log fonskiyonu
+    def log_menu(self):
+        if not os.path.exists('log'):
+            os.makedirs('log')
+        now = datetime.now()
+        now_string = now.strftime("%d/%m/%Y %H:%M:%S.%f")
+        message = self.sender().text()
+        log_file = open('log\LOG %s.txt' % self.log_time_string, "a")
+        log_line = now_string + ": ACTION:" + message + "\n"
+        log_file.write(log_line)
+        log_file.close()
+    
+    #Veri guncelleme
+    def update_data(self):
+        if not os.path.exists('data'):
+            os.makedirs('data')
+        now = datetime.now()
+        now_string = now.strftime("%d/%m/%Y %H:%M:%S.%f")
+        data_file = open('data\DATA %s.txt' % self.log_time_string, "a")
         data_line = now_string + ": " + str(len(self.editor.toPlainText())) + "\n"
         data_file.write(data_line)
         data_file.close()
@@ -208,7 +439,9 @@ class MainWindow(QMainWindow):
                 key_pressed = QKeySequence(modifiers + event.key()).toString()
             #Tus kombinasyonlarinda modifier tusu logda gozukmesin
             if(event.key() != Qt.Key_Shift and event.key() != Qt.Key_Alt and event.key() != Qt.Key_Control and event.key() != Qt.Key_Meta):
-                log_file = open('LOG %s.txt' % self.log_time_string, "a")
+                if not os.path.exists('log'):
+                    os.makedirs('log')
+                log_file = open('log\LOG %s.txt' % self.log_time_string, "a")
                 log_line = now_string + " :" + key_pressed + "\n"
                 log_file.write(log_line)
                 log_file.close()
@@ -297,6 +530,10 @@ class MainWindow(QMainWindow):
     #Program baslangic
 if __name__ == '__main__':
 
+    if not os.path.exists('log'):
+        os.makedirs('log')
+    if not os.path.exists('data'):
+        os.makedirs('data')
     
     app = QApplication(sys.argv)
     app.setApplicationName("Deneme Editor")
