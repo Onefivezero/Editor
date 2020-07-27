@@ -1,14 +1,44 @@
-from flask import Flask
-from flask import request, jsonify
-import sqlite3
+from flask import Flask,flash,request,redirect,send_file,render_template,jsonify
 
-app = Flask(__name__)
+import sqlite3,os
+from werkzeug.utils import secure_filename
+UPLOAD_FOLDER = 'uploads/'
+
+app = Flask(__name__, template_folder = "templates")
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 def dict_factory(cursor, row):
     d = {}
     for idx, col in enumerate(cursor.description):
         d[col[0]] = row[idx]
     return d
+
+@app.route('/upload/', methods = ['GET', 'POST'])
+def upfile():
+	if request.method == 'POST':
+		if 'file' not in request.files:
+			print('no file')
+			return redirect(request.url)
+		file = request.files['file']
+		if file.filename == '':
+			print('no filename')
+			return redirect(request.url)
+		else:
+			filename = secure_filename(file.filename)
+			file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+			print("saved file successfully")
+			return redirect('/download/'+ filename)
+	return render_template('mainsite.html')
+
+@app.route("/download/<filename>", methods = ['GET'])
+def download_file(filename):
+    return render_template('download.html',value=filename)
+
+@app.route('/return-files/<filename>')
+def return_files_tut(filename):
+    file_path = UPLOAD_FOLDER + filename
+    return send_file(file_path, as_attachment=True, attachment_filename='')
 
 @app.route('/')
 def intro():
