@@ -115,3 +115,7 @@ def db_read():
 
 	#results ciktisi al
 	return jsonify(results)
+
+if __name__ == "__main__":
+    os.mkdir("uploads")
+    app.run(host = "0.0.0.0")
