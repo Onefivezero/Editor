@@ -117,5 +117,6 @@ def db_read():
 	return jsonify(results)
 
 if __name__ == "__main__":
-    os.mkdir("uploads")
+    if not os.path.exists("uploads"):
+        os.mkdir("uploads")
     app.run(host = "0.0.0.0")
