@@ -1,4 +1,5 @@
 from flask import Flask,flash,request,redirect,send_file,render_template,jsonify
+from datetime import datetime
 
 import sqlite3,os
 from werkzeug.utils import secure_filename
@@ -25,7 +26,10 @@ def upfile():
 			print('no filename')
 			return redirect(request.url)
 		else:
+			now = datetime.now()
+			now_string = now.strftime("%d.%m.%Y %H.%M.%S.%f")
 			filename = secure_filename(file.filename)
+			filename = filename + " TIME_" + now_string
 			file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 			print("saved file successfully")
 			return redirect('/download/'+ filename)
