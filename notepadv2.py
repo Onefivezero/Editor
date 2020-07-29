@@ -182,6 +182,40 @@ class PythonHighlighter (QSyntaxHighlighter):
 			return False
 #SYNTAX BITIS
 
+class FileWindow(QMainWindow):
+	
+	def __init__(self):
+		
+		super(FileWindow, self).__init__()
+		
+		layout = QVBoxLayout()
+		
+		self.combo = QComboBox(self)
+		self.button_down = QPushButton(self)
+		self.button_down.setText("Download")
+		
+		layout.addWidget(self.combo)
+		layout.addWidget(self.button_down)
+		
+		widget = QWidget()
+		widget.setLayout(layout)
+		self.setCentralWidget(widget)
+		
+		self.button_down.clicked.connect(self.download_file)
+		
+	def download_file(self):
+		url = "http://127.0.0.1:5000/return-files/" + self.combo.currentText()
+		print(url)
+		try:
+			r = requests.get(url, allow_redirects=True)
+		except requests.exceptions.RequestException as err:
+			QMessageBox.about(self, "Status", str(err))
+		else:
+			open(self.combo.currentText(), 'wb').write(r.content)
+			QMessageBox.about(self, "Status", "Download Complete")
+		
+		self.close()
+		
 class MainWindow(QMainWindow):
 
 	def __init__(self, *args, **kwargs):
@@ -233,6 +267,13 @@ class MainWindow(QMainWindow):
 		file_toolbar.setIconSize(QSize(14, 14))
 		self.addToolBar(file_toolbar)
 		file_menu = self.menuBar().addMenu("&File")
+		
+		#Cloud list aksiyonu
+		cloud_list_action = QAction(QIcon(os.path.join('images', 'cloudup.svg')), "Cloud_List", self)
+		cloud_list_action.setStatusTip("Liss files on cloud")
+		cloud_list_action.triggered.connect(self.cloud_list)
+		cloud_list_action.triggered.connect(self.log_menu)
+		file_menu.addAction(cloud_list_action)
 		
 		#Cloud save aksiyonu
 		cloud_up_action = QAction(QIcon(os.path.join('images', 'cloudup.svg')), "Cloud_Up", self)
@@ -348,7 +389,7 @@ class MainWindow(QMainWindow):
 		wrap_action.triggered.connect(self.log_menu)
 		edit_menu.addAction(wrap_action)
 
-		#EXPERIMENTAL
+		#Button logs and functions
 		self.button1.clicked.connect(self.light_theme)
 		self.button2.clicked.connect(self.dark_theme)
 		self.button1.clicked.connect(self.log_button)
@@ -361,10 +402,26 @@ class MainWindow(QMainWindow):
 		#Basligi yenile ve pencereyi goster
 		self.update_title()
 		self.show()
-
+	
+	#Cloud list files
+	def cloud_list(self):
+		url = 'http://127.0.0.1:5000/list'
+		try:
+			r = requests.get(url)
+		except requests.exceptions.RequestException as err:
+			QMessageBox.about(self, "Status", str(err))
+		else:
+			filelist = r.json()
+			self.sec = FileWindow()
+			for index in filelist:
+				self.sec.combo.addItem(filelist[index])
+			self.sec.show()
+			
 	#Cloud update
 	def cloud_up(self):
 		url = 'http://127.0.0.1:5000/upload'
+		temp_file = open(tit, 'w')
+		temp_file.write(self.editor.toPlainText)
 		files = {'file' : self.editor.toPlainText()}
 		try:
 			r = requests.post(url, files = files)
