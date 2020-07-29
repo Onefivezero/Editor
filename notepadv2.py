@@ -366,11 +366,12 @@ class MainWindow(QMainWindow):
 	def cloud_up(self):
 		url = 'http://127.0.0.1:5000/upload'
 		files = {'file' : self.editor.toPlainText()}
-		r = requests.post(url, files = files)
-		s = r.reason
-		if(s == "OK"):
-			s = "Cloud upload successful"
-		QMessageBox.about(self, "Cloud Status", s)
+		try:
+			r = requests.post(url, files = files)
+		except requests.exceptions.RequestException as err:
+			QMessageBox.about(self, "Status", str(err))
+		else:
+			QMessageBox.about(self, "Status", "Upload Successful")
 
 	#Light theme
 	def light_theme(self):
