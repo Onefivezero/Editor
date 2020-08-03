@@ -14,6 +14,17 @@ def dict_factory(cursor, row):
     for idx, col in enumerate(cursor.description):
         d[col[0]] = row[idx]
     return d
+	
+@app.route('/list')
+def listfile():
+	path = UPLOAD_FOLDER
+	list_of_files = {}
+	i = 0
+	for filename in os.listdir(path):
+		list_of_files[i] = filename
+		i = i + 1
+	return jsonify(list_of_files)
+	
 
 @app.route('/upload/', methods = ['GET', 'POST'])
 def upfile():
@@ -26,10 +37,7 @@ def upfile():
 			print('no filename')
 			return redirect(request.url)
 		else:
-			now = datetime.now()
-			now_string = now.strftime("%d.%m.%Y %H.%M.%S.%f")
 			filename = secure_filename(file.filename)
-			filename = filename + " TIME_" + now_string
 			file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 			print("saved file successfully")
 			return redirect('/download/'+ filename)
