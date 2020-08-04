@@ -184,9 +184,9 @@ class PythonHighlighter (QSyntaxHighlighter):
 
 class FileWindow(QMainWindow):
 	
-	def __init__(self):
+	def __init__(self, parent):
 		
-		super(FileWindow, self).__init__()
+		super(FileWindow, self).__init__(parent)
 		
 		layout = QVBoxLayout()
 		
@@ -211,9 +211,13 @@ class FileWindow(QMainWindow):
 		except requests.exceptions.RequestException as err:
 			QMessageBox.about(self, "Status", str(err))
 		else:
-			open(self.combo.currentText(), 'wb').write(r.content)
+			filename = "downloads/" + self.combo.currentText()
+			f = open(filename, 'wb')
+			f.write(r.content)
+			filepath = os.path.abspath(f.name)
 			QMessageBox.about(self, "Status", "Download Complete")
-		
+			f.close()
+			self.parent().pseudo_open(filepath)
 		self.close()
 		
 class MainWindow(QMainWindow):
@@ -269,11 +273,11 @@ class MainWindow(QMainWindow):
 		file_menu = self.menuBar().addMenu("&File")
 		
 		#Cloud list aksiyonu
-		cloud_list_action = QAction(QIcon(os.path.join('images', 'cloudup.svg')), "Cloud_List", self)
-		cloud_list_action.setStatusTip("Liss files on cloud")
-		cloud_list_action.triggered.connect(self.cloud_list)
-		cloud_list_action.triggered.connect(self.log_menu)
-		file_menu.addAction(cloud_list_action)
+		cloud_down_action = QAction(QIcon(os.path.join('images', 'cloud_down.svg')), "cloud_down", self)
+		cloud_down_action.setStatusTip("List files on cloud")
+		cloud_down_action.triggered.connect(self.cloud_down)
+		cloud_down_action.triggered.connect(self.log_menu)
+		file_menu.addAction(cloud_down_action)
 		
 		#Cloud save aksiyonu
 		cloud_up_action = QAction(QIcon(os.path.join('images', 'cloudup.svg')), "Cloud_Up", self)
@@ -404,7 +408,7 @@ class MainWindow(QMainWindow):
 		self.show()
 	
 	#Cloud list files
-	def cloud_list(self):
+	def cloud_down(self):
 		url = 'http://127.0.0.1:5000/list'
 		try:
 			r = requests.get(url)
@@ -412,7 +416,7 @@ class MainWindow(QMainWindow):
 			QMessageBox.about(self, "Status", str(err))
 		else:
 			filelist = r.json()
-			self.sec = FileWindow()
+			self.sec = FileWindow(self)
 			for index in filelist:
 				self.sec.combo.addItem(filelist[index])
 			self.sec.show()
@@ -420,9 +424,12 @@ class MainWindow(QMainWindow):
 	#Cloud update
 	def cloud_up(self):
 		url = 'http://127.0.0.1:5000/upload'
-		temp_file = open(tit, 'w')
-		temp_file.write(self.editor.toPlainText)
-		files = {'file' : self.editor.toPlainText()}
+		nameoffile = os.path.basename(self.path) if self.path else "untitled"
+		temp_file = open(nameoffile, 'w')
+		temp_file.write(self.editor.toPlainText())
+		temp_file.close()
+		temp_file = open(nameoffile, 'r')
+		files = {'file' : temp_file}
 		try:
 			r = requests.post(url, files = files)
 		except requests.exceptions.RequestException as err:
@@ -534,12 +541,28 @@ class MainWindow(QMainWindow):
 
 	#Dosya acma fonksiyonu
 	def file_open(self):
-		path, _ = QFileDialog.getOpenFileName(self, "Open file", "", "Text documents (*.txt);All files (*.*)")
+		path, _ = QFileDialog.getOpenFileName(self, "Open file", "", "Text documents (*.txt) ;; All files (*.*)")
 
 		if path:
 			try:
 				with open(path, 'rU') as f:
 					text = f.read()
+
+			except Exception as e:
+				self.dialog_critical(str(e))
+
+			else:
+				self.path = path
+				self.editor.setPlainText(text)
+				self.update_title()
+
+	#experimental
+	def pseudo_open(self, path):
+		if path:
+			try:
+				with open(path, 'rU') as f:
+					text = f.read()
+					print(text)
 
 			except Exception as e:
 				self.dialog_critical(str(e))
@@ -562,12 +585,11 @@ class MainWindow(QMainWindow):
 		if self.path is None:
 			# Eger "path = None" ise, yani dosya bir yerde bulunmuyorsa farkli kaydet kullan.
 			return self.file_saveas()
-
 		self._save_to_path(self.path)
 		
 	#Dosya farkli kaydetme
 	def file_saveas(self):
-		path, _ = QFileDialog.getSaveFileName(self, "Save file", "", "Text documents (*.txt);All files (*.*)")
+		path, _ = QFileDialog.getSaveFileName(self, "Save file", "", "Text documents (*.txt) ;; All files (*.*)")
 
 		if not path:
 			# Dialog islemi iptal olursa path bos olacak
