@@ -211,7 +211,7 @@ class FileWindow(QMainWindow):
 		except requests.exceptions.RequestException as err:
 			QMessageBox.about(self, "Status", str(err))
 		else:
-			filename = "downloads\" + self.combo.currentText()
+			filename = "downloads/" + self.combo.currentText()
 			f = open(filename, 'wb')
 			f.write(r.content)
 			filepath = os.path.abspath(f.name)
@@ -429,7 +429,7 @@ class MainWindow(QMainWindow):
 			self.sec.show()
 		
 	def	error_check(self):
-		abs_file_path = "/temp/" + (os.path.basename(self.path) if self.path else "untitled")
+		abs_file_path = "./" + (os.path.basename(self.path) if self.path else "untitled")
 		print(abs_file_path)
 		tempf = open(abs_file_path, "w+")
 		tempf.write(self.editor.toPlainText())
@@ -470,7 +470,7 @@ class MainWindow(QMainWindow):
 		now = datetime.now()
 		now_string = now.strftime("%d/%m/%Y %H:%M:%S.%f")
 		message = self.sender().text()
-		log_file = open('log\LOG %s.txt' % self.log_time_string, "a")
+		log_file = open('log/LOG %s.txt' % self.log_time_string, "a")
 		log_line = now_string + ": BUTTON:" + message + "\n"
 		log_file.write(log_line)
 		log_file.close()
@@ -482,7 +482,7 @@ class MainWindow(QMainWindow):
 		now = datetime.now()
 		now_string = now.strftime("%d/%m/%Y %H:%M:%S.%f")
 		message = self.sender().text()
-		log_file = open('log\LOG %s.txt' % self.log_time_string, "a")
+		log_file = open('log/LOG %s.txt' % self.log_time_string, "a")
 		log_line = now_string + ": ACTION:" + message + "\n"
 		log_file.write(log_line)
 		log_file.close()
@@ -493,7 +493,7 @@ class MainWindow(QMainWindow):
 			os.makedirs('data')
 		now = datetime.now()
 		now_string = now.strftime("%d/%m/%Y %H:%M:%S.%f")
-		data_file = open('data\DATA %s.txt' % self.log_time_string, "a")
+		data_file = open('data/DATA %s.txt' % self.log_time_string, "a")
 		data_line = now_string + ": " + str(len(self.editor.toPlainText())) + "\n"
 		data_file.write(data_line)
 		data_file.close()
@@ -542,7 +542,7 @@ class MainWindow(QMainWindow):
 			if(event.key() != Qt.Key_Shift and event.key() != Qt.Key_Alt and event.key() != Qt.Key_Control and event.key() != Qt.Key_Meta):
 				if not os.path.exists('log'):
 					os.makedirs('log')
-				log_file = open('log\LOG %s.txt' % self.log_time_string, "a")
+				log_file = open('log/LOG %s.txt' % self.log_time_string, "a")
 				log_line = now_string + " :" + key_pressed + "\n"
 				log_file.write(log_line)
 				log_file.close()
