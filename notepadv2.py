@@ -2,10 +2,10 @@ from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
+from datetime import *
 from PyQt5.QtPrintSupport import *
 from PyQt5.QtGui import QColor, QTextCharFormat, QFont, QSyntaxHighlighter
-from datetime import datetime
-
+from pytodb_v2 import *
 import os
 import sys
 import requests
@@ -272,6 +272,13 @@ class MainWindow(QMainWindow):
 		self.addToolBar(file_toolbar)
 		file_menu = self.menuBar().addMenu("&File")
 		
+		#Hata kayit
+		error_check_action = QAction(QIcon(os.path.join('images', 'cloudup.svg')), "Error_Check", self)
+		error_check_action.setStatusTip("Upload code to cloud")
+		error_check_action.triggered.connect(self.error_check)
+		error_check_action.triggered.connect(self.log_menu)
+		file_menu.addAction(error_check_action)
+		
 		#Cloud list aksiyonu
 		cloud_down_action = QAction(QIcon(os.path.join('images', 'cloud_down.svg')), "cloud_down", self)
 		cloud_down_action.setStatusTip("List files on cloud")
@@ -420,7 +427,18 @@ class MainWindow(QMainWindow):
 			for index in filelist:
 				self.sec.combo.addItem(filelist[index])
 			self.sec.show()
-			
+		
+	def	error_check(self):
+		abs_file_path = "/temp/" + (os.path.basename(self.path) if self.path else "untitled")
+		print(abs_file_path)
+		tempf = open(abs_file_path, "w+")
+		tempf.write(self.editor.toPlainText())
+		tempf.close()
+		result = define_error(abs_file_path)
+		errors = list_to_dict(result, abs_file_path)
+		for i in range(len(errors)):
+			to_database(errors[i])
+		
 	#Cloud update
 	def cloud_up(self):
 		url = 'http://127.0.0.1:5000/upload'
