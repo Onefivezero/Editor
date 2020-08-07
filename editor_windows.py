@@ -273,8 +273,8 @@ class MainWindow(QMainWindow):
 		file_menu = self.menuBar().addMenu("&File")
 		
 		#Hata kayit
-		error_check_action = QAction(QIcon(os.path.join('images', 'cloudup.svg')), "Error_Check", self)
-		error_check_action.setStatusTip("Upload code to cloud")
+		error_check_action = QAction(QIcon(os.path.join('images', 'database_upload.svg')), "Error_Check", self)
+		error_check_action.setStatusTip("Check the code for errors")
 		error_check_action.triggered.connect(self.error_check)
 		error_check_action.triggered.connect(self.log_menu)
 		file_menu.addAction(error_check_action)
