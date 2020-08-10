@@ -1,5 +1,6 @@
 from flask import Flask,flash,request,redirect,send_file,render_template,jsonify
 from datetime import datetime
+import pathlib
 
 import sqlite3,os
 from werkzeug.utils import secure_filename
@@ -37,8 +38,10 @@ def upfile():
 			print('no filename')
 			return redirect(request.url)
 		else:
+			foldername = request.form['id']
 			filename = secure_filename(file.filename)
-			file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+			pathlib.Path(app.config['UPLOAD_FOLDER'], foldername).mkdir(exist_ok=True)
+			file.save("uploads/" + foldername + "/" + filename)
 			print("saved file successfully")
 			return redirect('/download/'+ filename)
 	return render_template('mainsite.html')

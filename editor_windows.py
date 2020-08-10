@@ -9,6 +9,7 @@ from lib import pytodb_v2
 import os
 import sys
 import requests
+import random
 
 #SYNTAX HIGHLIGHT BASLANGIC
 def format(color, style=''):
@@ -444,19 +445,24 @@ class MainWindow(QMainWindow):
 		
 	#Cloud update
 	def cloud_up(self):
-		url = 'http://127.0.0.1:5000/upload'
-		nameoffile = os.path.basename(self.path) if self.path else "untitled"
-		temp_file = open(nameoffile, 'w')
-		temp_file.write(self.editor.toPlainText())
-		temp_file.close()
-		temp_file = open(nameoffile, 'r')
-		files = {'file' : temp_file}
-		try:
-			r = requests.post(url, files = files)
-		except requests.exceptions.RequestException as err:
-			QMessageBox.about(self, "Status", str(err))
-		else:
-			QMessageBox.about(self, "Status", "Upload Successful")
+		self.file_save()
+		if self.path:
+			configfile = open('config.ini', 'r')
+			user_id = configfile.read()
+			url = 'http://127.0.0.1:5000/upload'
+			nameoffile = os.path.basename(self.path)
+			temp_file = open(nameoffile, 'w')
+			temp_file.write(self.editor.toPlainText())
+			temp_file.close()
+			temp_file = open(nameoffile, 'r')
+			files = {'file' : temp_file}
+			data = {'id' : user_id}
+			try:
+				r = requests.post(url, files = files, data = data)
+			except requests.exceptions.RequestException as err:
+				QMessageBox.about(self, "Status", str(err))
+			else:
+				QMessageBox.about(self, "Status", "Upload Successful")
 
 	#Light theme
 	def light_theme(self):
@@ -658,6 +664,11 @@ if __name__ == '__main__':
 		os.makedirs('temp')
 	if not os.path.exists('downloads'):
 		os.makedirs('downloads')
+	if not os.path.isfile('config.ini'):
+		rnd_nmb = random.randint(0,99999999)
+		f = open('config.ini', 'w')
+		f.write(str(rnd_nmb))
+		f.close()
 	
 	app = QApplication(sys.argv)
 	app.setApplicationName("Deneme Editor")
