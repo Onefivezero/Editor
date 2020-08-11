@@ -12,3 +12,5 @@ Servisi başlatmak için net.py dosyasının çalıştırılması yeterli, taray
 Upload/Download kısmına geçmek için URL'ye "localhost:<port numarası>/upload" yazılması gerekiyor. Dosya yüklendikten sonra otomatik olarak download kısmına geçiş yapacaktır.
 
 Repository temizlendi, artık sadece editor_windows ve editor_pardus olacak
+
+Chatboxa "hata" yazılıp butona tıklanırsa veritabanındaki en son girdideki hatalı kodu üstteki chatboxa yazıyor.
