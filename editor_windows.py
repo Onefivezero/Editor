@@ -6,6 +6,7 @@ from datetime import *
 from PyQt5.QtPrintSupport import *
 from PyQt5.QtGui import QColor, QTextCharFormat, QFont, QSyntaxHighlighter
 from lib import pytodb_v2
+import sqlite3 as sql
 import os
 import sys
 import requests
@@ -232,7 +233,8 @@ class MainWindow(QMainWindow):
 		self.log_time_string = self.log_time.strftime("%d.%m.%Y %H.%M.%S")
 		
 		#Metin kutusu, dugmeler, ve layout olusturma
-		layout = QVBoxLayout()
+		layout = QHBoxLayout()
+		layout1 = QVBoxLayout()
 		layout2 = QHBoxLayout()
 		self.editor = QPlainTextEdit()
 		self.editor.installEventFilter(self)
@@ -240,7 +242,17 @@ class MainWindow(QMainWindow):
 		self.button2 = QPushButton("Dark mode")
 		self.button1.setStyleSheet("background-color: white;  color:black; border: 1px solid gray; padding:5px 10px")
 		self.button2.setStyleSheet("background-color: black;  color:white; border: 1px solid gray; padding:5px 10px")
-
+		
+		#Chatbox buton ve textbox
+		layout3 = QVBoxLayout()
+		self.chatboxtext = QPlainTextEdit()
+		self.chatboxtext.setReadOnly(True)
+		self.chatboxsend = QLineEdit()
+		self.chatbutton = QPushButton("Gonder")
+		layout3.addWidget(self.chatboxtext)
+		layout3.addWidget(self.chatboxsend)
+		layout3.addWidget(self.chatbutton)
+		
 		#Font belirleme
 		fixedfont = QFontDatabase.systemFont(QFontDatabase.FixedFont)
 		fixedfont.setPointSize(12)
@@ -253,11 +265,12 @@ class MainWindow(QMainWindow):
 		self.path = None
 
 		#Layouta metin kutusunu ve butonu ekleme
-		layout.addWidget(self.editor)
+		layout1.addWidget(self.editor)
 		layout2.addWidget(self.button1)
 		layout2.addWidget(self.button2)
-		layout.addLayout(layout2)
-
+		layout1.addLayout(layout2)
+		layout.addLayout(layout1)
+		layout.addLayout(layout3)
 		#Ana widget ekleme, layoutu bu widgeta ekleme, ve metin kutusunu bu widgeta yerlestirme
 		widget = QWidget()
 		widget.setLayout(layout)
@@ -404,8 +417,11 @@ class MainWindow(QMainWindow):
 		#Button logs and functions
 		self.button1.clicked.connect(self.light_theme)
 		self.button2.clicked.connect(self.dark_theme)
+		self.chatbutton.clicked.connect(self.checkbox_sent)
 		self.button1.clicked.connect(self.log_button)
 		self.button2.clicked.connect(self.log_button)
+		self.chatbutton.clicked.connect(self.log_button)
+		
 		
 		timer = QTimer(self)
 		timer.timeout.connect(self.update_data)
@@ -415,7 +431,29 @@ class MainWindow(QMainWindow):
 		self.update_title()
 		self.show()
 	
-	#Cloud list files
+	#Chatbox send message
+	def checkbox_sent(self):
+		#Girilen mesajı degiskene ata, textboxa yaz ve LineEdit'teki yaziyi sil
+		user_input = self.chatboxsend.text()
+		self.chatboxsend.clear()
+		self.chatboxtext.appendPlainText("Kullanici: " + user_input)
+		if(user_input == "hata"):
+			conn = None
+			try:
+				conn = sql.connect("errorinpython.db")
+			except Exception as e:
+				print(e)
+			cur = conn.cursor()
+			#Kullanici "hata" yazarsa veritabaninina yazilan son girdideki hata raporunu turkcelestirip kullaniciya aktar
+			try:
+				cur.execute("SELECT * FROM error ORDER BY id DESC LIMIT 1")
+			except Exception as no_database:
+				self.chatboxtext.appendPlainText("Chatbox(database): " + str(no_database))
+				return
+			result = cur.fetchone()
+			self.chatboxtext.appendPlainText("Chatbox: " + result[10])
+			
+		#Cloud list files
 	def cloud_down(self):
 		url = 'http://127.0.0.1:5000/list'
 		try:
