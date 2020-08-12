@@ -457,6 +457,8 @@ class MainWindow(QMainWindow):
 			print(error_code)
 			if(error_code == "E0602"):
 				self.chatboxtext.appendPlainText("Chatbox: %s no'lu satirda %s degiskenini yanlis yazmis veya daha once tanimlamamis olabilirsin." % (result[6] , (result[9])[19:]))
+		elif(user_input == "merhaba"):
+			self.chatboxtext.appendPlainText("Chatbox(database): Merhaba!")
 			
 		#Cloud list files
 	def cloud_down(self):
