@@ -14,5 +14,7 @@ Upload/Download kısmına geçmek için URL'ye "localhost:<port numarası>/uploa
 Repository temizlendi, artık sadece editor_windows ve editor_pardus olacak
 
 Chatbox komutları:
+
 "hata" : Chatbox, Veritabanındaki en son girilen hatayı alarak yapılan hatayı düzeltmek için tavsiyede bulunur(Şimdilik sadece "undefined variable" için)
+
 "merhaba" : Chatbox "Merhaba!" diyerek karşılık verir
