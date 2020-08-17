@@ -330,6 +330,7 @@ class MainWindow(QMainWindow):
 		#Chatbox buton ve textbox
 		layout3 = QVBoxLayout()
 		self.chatboxtext = QListView()
+		layout4 = QHBoxLayout()
 		self.chatboxsend = QLineEdit()
 		self.chatbutton = QPushButton("Gonder")
 		#Relegate(?)
@@ -337,8 +338,9 @@ class MainWindow(QMainWindow):
 		self.model = MessageModel()
 		self.chatboxtext.setModel(self.model)
 		layout3.addWidget(self.chatboxtext)
-		layout3.addWidget(self.chatboxsend)
-		layout3.addWidget(self.chatbutton)
+		layout4.addWidget(self.chatboxsend)
+		layout4.addWidget(self.chatbutton)
+		layout3.addLayout(layout4)
 		
 		#Font belirleme
 		fixedfont = QFontDatabase.systemFont(QFontDatabase.FixedFont)
@@ -524,7 +526,7 @@ class MainWindow(QMainWindow):
 		user_input = self.chatboxsend.text()
 		self.chatboxsend.clear()
 		self.model.add_message(USER_ME, user_input)
-		if(user_input == "hata"):
+		if(user_input == "evet"):
 			conn = None
 			try:
 				conn = sql.connect("errorinpython.db")
@@ -538,12 +540,12 @@ class MainWindow(QMainWindow):
 				self.model.add_message(USER_THEM, str(no_database))
 				return
 			result = cur.fetchone()
-			#Hata koduna göre yorum
-			error_code = result[7]
+			#Hata raporunu direk geri gönder
+			# Hata kodu(kaldirildi): error_code = result[7]
 			error_desc = result[9]
-			print(error_code)
-			if(error_code == "E0602"):
-				self.model.add_message(USER_THEM, "%s no'lu satirda %s degiskenini yanlis yazmis veya daha once tanimlamamis olabilirsin." % (result[6] , (result[9])[19:]))
+			self.model.add_message(USER_THEM, error_desc)
+		elif(user_input == "hayir"):
+			self.model.add_message(USER_THEM, "Peki.")
 		elif(user_input == "merhaba"):
 			self.model.add_message(USER_THEM, "Merhaba!")
 			
@@ -571,7 +573,7 @@ class MainWindow(QMainWindow):
 		if len(errors) == 0:
 			QMessageBox.about(self, "Status", "Hata bulunmadi")
 		else:
-			QMessageBox.about(self, "Status", "Hata(lar) bulundu, veritabanina eklendi")
+			self.model.add_message(USER_THEM, "Yazilan kodda hata var, hatalarinizdan birini gormek ister misiniz?")
 		for i in range(len(errors)):
 			pytodb_v2.to_database(errors[i])
 		
