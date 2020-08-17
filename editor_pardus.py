@@ -6,9 +6,95 @@ from datetime import *
 from PyQt5.QtPrintSupport import *
 from PyQt5.QtGui import QColor, QTextCharFormat, QFont, QSyntaxHighlighter
 from lib import pytodb_v2
+import sqlite3 as sql
 import os
 import sys
 import requests
+import random
+
+from PyQt5.QtCore import QAbstractListModel, QMargins, QPoint, QSize, Qt
+from PyQt5.QtGui import QColor, QFontMetrics
+
+#CHATBOX DESIGN START
+
+USER_ME = 0
+USER_THEM = 1
+
+BUBBLE_COLORS = {USER_ME: "#90caf9", USER_THEM: "#a5d6a7"}
+
+BUBBLE_PADDING = QMargins(15, 5, 15, 5)
+TEXT_PADDING = QMargins(25, 15, 25, 15)
+
+
+class MessageDelegate(QStyledItemDelegate):
+    """
+    Draws each message.
+    """
+
+    def paint(self, painter, option, index):
+        # Retrieve the user,message uple from our model.data method.
+        user, text = index.model().data(index, Qt.DisplayRole)
+
+        # option.rect contains our item dimensions. We need to pad it a bit
+        # to give us space from the edge to draw our shape.
+
+        bubblerect = option.rect.marginsRemoved(BUBBLE_PADDING)
+        textrect = option.rect.marginsRemoved(TEXT_PADDING)
+
+        # draw the bubble, changing color + arrow position depending on who
+        # sent the message. the bubble is a rounded rect, with a triangle in
+        # the edge.
+        painter.setPen(Qt.NoPen)
+        color = QColor(BUBBLE_COLORS[user])
+        painter.setBrush(color)
+        painter.drawRoundedRect(bubblerect, 10, 10)
+
+        # draw the triangle bubble-pointer, starting from
+
+        if user == USER_ME:
+            p1 = bubblerect.topRight()
+        else:
+            p1 = bubblerect.topLeft()
+        painter.drawPolygon(p1 + QPoint(-20, 0), p1 + QPoint(20, 0), p1 + QPoint(0, 20))
+
+        # draw the text
+        painter.setPen(Qt.black)
+        painter.drawText(textrect, Qt.TextWordWrap, text)
+
+    def sizeHint(self, option, index):
+        _, text = index.model().data(index, Qt.DisplayRole)
+        # Calculate the dimensions the text will require.
+        metrics = QApplication.fontMetrics()
+        rect = option.rect.marginsRemoved(TEXT_PADDING)
+        rect = metrics.boundingRect(rect, Qt.TextWordWrap, text)
+        rect = rect.marginsAdded(TEXT_PADDING)  # Re add padding for item size.
+        return rect.size()
+
+
+class MessageModel(QAbstractListModel):
+    def __init__(self, *args, **kwargs):
+        super(MessageModel, self).__init__(*args, **kwargs)
+        self.messages = []
+
+    def data(self, index, role):
+        if role == Qt.DisplayRole:
+            # Here we pass the delegate the user, message tuple.
+            return self.messages[index.row()]
+
+    def rowCount(self, index):
+        return len(self.messages)
+
+    def add_message(self, who, text):
+        """
+        Add an message to our message list, getting the text from the QLineEdit
+        """
+        if text:  # Don't add empty strings.
+            # Access the list via the model.
+            self.messages.append((who, text))
+            # Trigger refresh.
+            self.layoutChanged.emit()
+			
+#CHATBOX DESIGN END
 
 #SYNTAX HIGHLIGHT BASLANGIC
 def format(color, style=''):
@@ -231,7 +317,8 @@ class MainWindow(QMainWindow):
 		self.log_time_string = self.log_time.strftime("%d.%m.%Y %H.%M.%S")
 		
 		#Metin kutusu, dugmeler, ve layout olusturma
-		layout = QVBoxLayout()
+		layout = QHBoxLayout()
+		layout1 = QVBoxLayout()
 		layout2 = QHBoxLayout()
 		self.editor = QPlainTextEdit()
 		self.editor.installEventFilter(self)
@@ -239,7 +326,22 @@ class MainWindow(QMainWindow):
 		self.button2 = QPushButton("Dark mode")
 		self.button1.setStyleSheet("background-color: white;  color:black; border: 1px solid gray; padding:5px 10px")
 		self.button2.setStyleSheet("background-color: black;  color:white; border: 1px solid gray; padding:5px 10px")
-
+		
+		#Chatbox buton ve textbox
+		layout3 = QVBoxLayout()
+		self.chatboxtext = QListView()
+		layout4 = QHBoxLayout()
+		self.chatboxsend = QLineEdit()
+		self.chatbutton = QPushButton("Gonder")
+		#Relegate(?)
+		self.chatboxtext.setItemDelegate(MessageDelegate())
+		self.model = MessageModel()
+		self.chatboxtext.setModel(self.model)
+		layout3.addWidget(self.chatboxtext)
+		layout4.addWidget(self.chatboxsend)
+		layout4.addWidget(self.chatbutton)
+		layout3.addLayout(layout4)
+		
 		#Font belirleme
 		fixedfont = QFontDatabase.systemFont(QFontDatabase.FixedFont)
 		fixedfont.setPointSize(12)
@@ -252,11 +354,12 @@ class MainWindow(QMainWindow):
 		self.path = None
 
 		#Layouta metin kutusunu ve butonu ekleme
-		layout.addWidget(self.editor)
+		layout1.addWidget(self.editor)
 		layout2.addWidget(self.button1)
 		layout2.addWidget(self.button2)
-		layout.addLayout(layout2)
-
+		layout1.addLayout(layout2)
+		layout.addLayout(layout1)
+		layout.addLayout(layout3)
 		#Ana widget ekleme, layoutu bu widgeta ekleme, ve metin kutusunu bu widgeta yerlestirme
 		widget = QWidget()
 		widget.setLayout(layout)
@@ -403,8 +506,11 @@ class MainWindow(QMainWindow):
 		#Button logs and functions
 		self.button1.clicked.connect(self.light_theme)
 		self.button2.clicked.connect(self.dark_theme)
+		self.chatbutton.clicked.connect(self.checkbox_sent)
 		self.button1.clicked.connect(self.log_button)
 		self.button2.clicked.connect(self.log_button)
+		self.chatbutton.clicked.connect(self.log_button)
+		
 		
 		timer = QTimer(self)
 		timer.timeout.connect(self.update_data)
@@ -414,7 +520,36 @@ class MainWindow(QMainWindow):
 		self.update_title()
 		self.show()
 	
-	#Cloud list files
+	#Chatbox send message
+	def checkbox_sent(self):
+		#Girilen mesajı degiskene ata, textboxa yaz ve LineEdit'teki yaziyi sil
+		user_input = self.chatboxsend.text()
+		self.chatboxsend.clear()
+		self.model.add_message(USER_ME, user_input)
+		if(user_input == "evet"):
+			conn = None
+			try:
+				conn = sql.connect("errorinpython.db")
+			except Exception as e:
+				print(e)
+			cur = conn.cursor()
+			#Kullanici "hata" yazarsa veritabaninina yazilan son girdideki hata raporunu turkcelestirip kullaniciya aktar
+			try:
+				cur.execute("SELECT * FROM error ORDER BY id DESC LIMIT 1")
+			except Exception as no_database:
+				self.model.add_message(USER_THEM, str(no_database))
+				return
+			result = cur.fetchone()
+			#Hata raporunu direk geri gönder
+			# Hata kodu(kaldirildi): error_code = result[7]
+			error_desc = result[9]
+			self.model.add_message(USER_THEM, error_desc)
+		elif(user_input == "hayir"):
+			self.model.add_message(USER_THEM, "Peki.")
+		elif(user_input == "merhaba"):
+			self.model.add_message(USER_THEM, "Merhaba!")
+			
+		#Cloud list files
 	def cloud_down(self):
 		url = 'http://127.0.0.1:5000/list'
 		try:
@@ -438,25 +573,30 @@ class MainWindow(QMainWindow):
 		if len(errors) == 0:
 			QMessageBox.about(self, "Status", "Hata bulunmadi")
 		else:
-			QMessageBox.about(self, "Status", "Hata(lar) bulundu, veritabanina eklendi")
+			self.model.add_message(USER_THEM, "Yazilan kodda hata var, hatalarinizdan birini gormek ister misiniz?")
 		for i in range(len(errors)):
 			pytodb_v2.to_database(errors[i])
 		
 	#Cloud update
 	def cloud_up(self):
-		url = 'http://127.0.0.1:5000/upload'
-		nameoffile = os.path.basename(self.path) if self.path else "untitled"
-		temp_file = open(nameoffile, 'w')
-		temp_file.write(self.editor.toPlainText())
-		temp_file.close()
-		temp_file = open(nameoffile, 'r')
-		files = {'file' : temp_file}
-		try:
-			r = requests.post(url, files = files)
-		except requests.exceptions.RequestException as err:
-			QMessageBox.about(self, "Status", str(err))
-		else:
-			QMessageBox.about(self, "Status", "Upload Successful")
+		self.file_save()
+		if self.path:
+			configfile = open('config.ini', 'r')
+			user_id = configfile.read()
+			url = 'http://127.0.0.1:5000/upload'
+			nameoffile = os.path.basename(self.path)
+			temp_file = open(nameoffile, 'w')
+			temp_file.write(self.editor.toPlainText())
+			temp_file.close()
+			temp_file = open(nameoffile, 'r')
+			files = {'file' : temp_file}
+			data = {'id' : user_id}
+			try:
+				r = requests.post(url, files = files, data = data)
+			except requests.exceptions.RequestException as err:
+				QMessageBox.about(self, "Status", str(err))
+			else:
+				QMessageBox.about(self, "Status", "Upload Successful")
 
 	#Light theme
 	def light_theme(self):
@@ -658,6 +798,11 @@ if __name__ == '__main__':
 		os.makedirs('temp')
 	if not os.path.exists('downloads'):
 		os.makedirs('downloads')
+	if not os.path.isfile('config.ini'):
+		rnd_nmb = random.randint(0,99999999)
+		f = open('config.ini', 'w')
+		f.write(str(rnd_nmb))
+		f.close()
 	
 	app = QApplication(sys.argv)
 	app.setApplicationName("Deneme Editor")
