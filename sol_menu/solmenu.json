@@ -1,10 +1,10 @@
 {
 "main": 
 	{
-	"sub1" : null,
-	"sub2" : null,
+	"sub1" : "func1",
+	"sub2" : "func2",
 	"sub3" :{
-			"subsub1" : null
+			"subsub1" : "func3"
 			}
 	}
 }

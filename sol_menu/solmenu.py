@@ -4,14 +4,9 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 
 import sys	, json
-
-data = [
-	("1", []),
-	("2", [("3", [])])
-	]
-
-
+	
 #Custom textbox to accept input
+
 class textboxdrag(QPlainTextEdit):
 
 	def __init__(self,parent):
@@ -20,7 +15,7 @@ class textboxdrag(QPlainTextEdit):
 
 	def dragEnterEvent(self, e):
 		index = self.parent().treeView.selectedIndexes()[0]
-		item = self.parent().model.itemFromIndex(index).text()
+		item = self.parent().model.itemFromIndex(index).toolTip()
 		e.mimeData().setText(item)
 		e.accept()
 	
@@ -53,9 +48,10 @@ class MainWindow(QWidget):
 		for x in elements:
 			item = QStandardItem(x)
 			parent.appendRow(item)
-			if elements[x]:
+			if type(elements[x]) == dict:
 				self.addItems(item, elements[x])
-		
+			else:
+				item.setToolTip(elements[x])
 	
 	#Treeview item ekleme(eski, tuple icin)
 	def addItems_old(self, parent, elements):
