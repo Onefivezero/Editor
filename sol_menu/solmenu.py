@@ -3,7 +3,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 
-import sys	
+import sys	, json
 
 data = [
 	("1", []),
@@ -37,7 +37,7 @@ class MainWindow(QWidget):
 		self.treeView.setSelectionMode(QAbstractItemView.SingleSelection)
 		self.treeView.setDropIndicatorShown(True)
 		self.model = QStandardItemModel()
-		self.addItems(self.model, data)
+		self.addItems(self.model, raw_data)
 		self.treeView.setModel(self.model)
 		
 		
@@ -50,7 +50,16 @@ class MainWindow(QWidget):
 	
 	#Treeview item ekleme
 	def addItems(self, parent, elements):
+		for x in elements:
+			item = QStandardItem(x)
+			parent.appendRow(item)
+			if elements[x]:
+				self.addItems(item, elements[x])
+		
 	
+	#Treeview item ekleme(eski, tuple icin)
+	def addItems_old(self, parent, elements):
+		
 		for text, children in elements:
 			item = QStandardItem(text)
 			parent.appendRow(item)
@@ -58,6 +67,9 @@ class MainWindow(QWidget):
 				self.addItems(item, children)
 	
 if __name__ == "__main__":
+	file = open("solmenu.json", "r")
+	raw_data = json.load(file)
+	file.close()
 	app = QApplication(sys.argv)
 	window = MainWindow()
 	window.show()
