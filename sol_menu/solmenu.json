@@ -1,10 +1,20 @@
 {
-"main": 
+"Döngüler": 
 	{
-	"sub1" : "func1",
-	"sub2" : "func2",
-	"sub3" :{
-			"subsub1" : "func3"
+	"For Döngüleri" :{
+			"ornek1" : "for i in 10:\nprint(i)"
+			},
+	"While Döngüleri" :{
+			"ornek1" : "i = 1\nwhile i < 6:\nprint(i)\ni += 1"
+			}
+	},
+"Matematik Fonksiyonları": 
+	{
+	"Min-Max" :{
+			"ornek1" : "y = max(5, 10, 25)\nprint(y)"
+			},
+	"Mutlak Değer" :{
+			"ornek1" : "x = abs(-7.25)\nprint(x)"
 			}
 	}
 }
