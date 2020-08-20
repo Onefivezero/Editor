@@ -15,7 +15,7 @@ class textboxdrag(QPlainTextEdit):
 
 	def dragEnterEvent(self, e):
 		index = self.parent().treeView.selectedIndexes()[0]
-		item = self.parent().model.itemFromIndex(index).toolTip()
+		item = self.parent().model.itemFromIndex(index).text()
 		e.mimeData().setText(item)
 		e.accept()
 	
@@ -46,12 +46,13 @@ class MainWindow(QWidget):
 	#Treeview item ekleme
 	def addItems(self, parent, elements):
 		for x in elements:
-			item = QStandardItem(x)
-			parent.appendRow(item)
 			if type(elements[x]) == dict:
+				item = QStandardItem(x)
+				parent.appendRow(item)
 				self.addItems(item, elements[x])
 			else:
-				item.setToolTip(elements[x])
+				item = QStandardItem(elements[x])
+				parent.appendRow(item)
 	
 	#Treeview item ekleme(eski, tuple icin)
 	def addItems_old(self, parent, elements):
