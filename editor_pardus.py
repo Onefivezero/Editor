@@ -31,6 +31,10 @@ class textboxdrag(QPlainTextEdit):
 	
 	def dropEvent(self, e):
 		self.insertPlainText(e.mimeData().text())
+		mimeData = QtCore.QMimeData()
+		mimeData.setText("")
+		dummyEvent = QtGui.QDropEvent(e.posF(), e.possibleActions(),mimeData, e.mouseButtons(), e.keyboardModifiers())
+		super(textboxdrag, self).dropEvent(dummyEvent)
 
 #CHATBOX DESIGN START
 
