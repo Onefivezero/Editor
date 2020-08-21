@@ -10,10 +10,27 @@ import sqlite3 as sql
 import os
 import sys
 import requests
-import random
+import random, json
 
 from PyQt5.QtCore import QAbstractListModel, QMargins, QPoint, QSize, Qt
 from PyQt5.QtGui import QColor, QFontMetrics
+
+#Custom textbox to accept input
+
+class textboxdrag(QPlainTextEdit):
+
+	def __init__(self,parent):
+		super(textboxdrag,self).__init__(parent)
+		self.setAcceptDrops(True)
+
+	def dragEnterEvent(self, e):
+		index = self.parent().parent().treeView.selectedIndexes()[0]
+		item = index.model().itemFromIndex(index).text()
+		e.mimeData().setText(item)
+		e.accept()
+	
+	def dropEvent(self, e):
+		self.insertPlainText(e.mimeData().text())
 
 #CHATBOX DESIGN START
 
@@ -28,6 +45,7 @@ USER_TRANSLATE = {io: QPoint(20, 0), altri: QPoint(0, 0)}
 
 BUBBLE_PADDING = QMargins(15, 5, 35, 5)
 TEXT_PADDING = QMargins(25, 15, 45, 15)
+
 
 
 class MessageDelegate(QStyledItemDelegate):
@@ -354,6 +372,17 @@ class MainWindow(QMainWindow):
 		self.button1.setStyleSheet("background-color: white;  color:black; border: 1px solid gray; padding:5px 10px")
 		self.button2.setStyleSheet("background-color: black;  color:white; border: 1px solid gray; padding:5px 10px")
 		
+		#Solmenu widgetlari olustur
+		self.text1 = textboxdrag(parent = self)
+		self.treeView = QTreeView()
+		self.treeView.setDragEnabled(True)
+		self.treeView.setSelectionMode(QAbstractItemView.SingleSelection)
+		self.treeView.setDropIndicatorShown(True)
+		self.model = QStandardItemModel()
+		self.addItems(self.model, raw_data)
+		self.treeView.setModel(self.model)
+		self.model.setHorizontalHeaderLabels([self.tr("Object")])
+		
 		#Chatbox buton ve textbox
 		layout3 = QVBoxLayout()
 		self.chatboxtext = QListView()
@@ -385,6 +414,8 @@ class MainWindow(QMainWindow):
 		layout2.addWidget(self.button1)
 		layout2.addWidget(self.button2)
 		layout1.addLayout(layout2)
+		layout.addWidget(self.treeView)
+		layout.addWidget(self.text1)
 		layout.addLayout(layout1)
 		layout.addLayout(layout3)
 		#Ana widget ekleme, layoutu bu widgeta ekleme, ve metin kutusunu bu widgeta yerlestirme
@@ -546,6 +577,17 @@ class MainWindow(QMainWindow):
 		#Basligi yenile ve pencereyi goster
 		self.update_title()
 		self.show()
+	
+	#Treeview item ekleme
+	def addItems(self, parent, elements):
+		for x in elements:
+			if type(elements[x]) == dict:
+				item = QStandardItem(x)
+				parent.appendRow(item)
+				self.addItems(item, elements[x])
+			else:
+				item = QStandardItem(elements[x])
+				parent.appendRow(item)
 	
 	#Chatbox send message
 	def checkbox_sent(self):
@@ -815,6 +857,11 @@ class MainWindow(QMainWindow):
 
 	#Program baslangic
 if __name__ == '__main__':
+	
+	#Solmenu icin veri topla
+	file = open("solmenu.json", "r")
+	raw_data = json.load(file)
+	file.close()
 	
 	#Gerekli klasorler bulunmuyorsa bu klasorleri olustur
 	if not os.path.exists('log'):
