@@ -10,20 +10,42 @@ import sqlite3 as sql
 import os
 import sys
 import requests
-import random
+import random, json
 
 from PyQt5.QtCore import QAbstractListModel, QMargins, QPoint, QSize, Qt
 from PyQt5.QtGui import QColor, QFontMetrics
 
+#Custom textbox to accept input
+
+class textboxdrag(QPlainTextEdit):
+
+	def __init__(self,parent):
+		super(textboxdrag,self).__init__(parent)
+		self.setAcceptDrops(True)
+
+	def dragEnterEvent(self, e):
+		index = self.parent().parent().treeView.selectedIndexes()[0]
+		item = index.model().itemFromIndex(index).text()
+		e.mimeData().setText(item)
+		e.accept()
+	
+	def dropEvent(self, e):
+		self.insertPlainText(e.mimeData().text())
+
 #CHATBOX DESIGN START
+
+io = 0
+altri = 1
 
 USER_ME = 0
 USER_THEM = 1
 
-BUBBLE_COLORS = {USER_ME: "#90caf9", USER_THEM: "#a5d6a7"}
+BUBBLE_COLORS = {io: "#90caf9", altri: "#a5d6a7"}
+USER_TRANSLATE = {io: QPoint(20, 0), altri: QPoint(0, 0)}
 
-BUBBLE_PADDING = QMargins(15, 5, 15, 5)
-TEXT_PADDING = QMargins(25, 15, 25, 15)
+BUBBLE_PADDING = QMargins(15, 5, 35, 5)
+TEXT_PADDING = QMargins(25, 15, 45, 15)
+
 
 
 class MessageDelegate(QStyledItemDelegate):
@@ -31,13 +53,18 @@ class MessageDelegate(QStyledItemDelegate):
     Draws each message.
     """
 
+    _font = None
+
     def paint(self, painter, option, index):
+        painter.save()
         # Retrieve the user,message uple from our model.data method.
         user, text = index.model().data(index, Qt.DisplayRole)
 
+        trans = USER_TRANSLATE[user]
+        painter.translate(trans)
+
         # option.rect contains our item dimensions. We need to pad it a bit
         # to give us space from the edge to draw our shape.
-
         bubblerect = option.rect.marginsRemoved(BUBBLE_PADDING)
         textrect = option.rect.marginsRemoved(TEXT_PADDING)
 
@@ -49,26 +76,41 @@ class MessageDelegate(QStyledItemDelegate):
         painter.setBrush(color)
         painter.drawRoundedRect(bubblerect, 10, 10)
 
-        # draw the triangle bubble-pointer, starting from
-
+        # draw the triangle bubble-pointer, starting from the top left/right.
         if user == USER_ME:
             p1 = bubblerect.topRight()
         else:
             p1 = bubblerect.topLeft()
         painter.drawPolygon(p1 + QPoint(-20, 0), p1 + QPoint(20, 0), p1 + QPoint(0, 20))
 
+        toption = QTextOption()
+        toption.setWrapMode(QTextOption.WrapAtWordBoundaryOrAnywhere)
+
         # draw the text
-        painter.setPen(Qt.black)
-        painter.drawText(textrect, Qt.TextWordWrap, text)
+        doc = QTextDocument(text)
+        doc.setTextWidth(textrect.width())
+        doc.setDefaultTextOption(toption)
+        doc.setDocumentMargin(0)
+
+        painter.translate(textrect.topLeft())
+        doc.drawContents(painter)
+        painter.restore()
 
     def sizeHint(self, option, index):
         _, text = index.model().data(index, Qt.DisplayRole)
-        # Calculate the dimensions the text will require.
-        metrics = QApplication.fontMetrics()
-        rect = option.rect.marginsRemoved(TEXT_PADDING)
-        rect = metrics.boundingRect(rect, Qt.TextWordWrap, text)
-        rect = rect.marginsAdded(TEXT_PADDING)  # Re add padding for item size.
-        return rect.size()
+        textrect = option.rect.marginsRemoved(TEXT_PADDING)
+
+        toption = QTextOption()
+        toption.setWrapMode(QTextOption.WrapAtWordBoundaryOrAnywhere)
+
+        doc = QTextDocument(text)
+        doc.setTextWidth(textrect.width())
+        doc.setDefaultTextOption(toption)
+        doc.setDocumentMargin(0)
+
+        textrect.setHeight(doc.size().height())
+        textrect = textrect.marginsAdded(TEXT_PADDING)
+        return textrect.size()
 
 
 class MessageModel(QAbstractListModel):
@@ -80,6 +122,9 @@ class MessageModel(QAbstractListModel):
         if role == Qt.DisplayRole:
             # Here we pass the delegate the user, message tuple.
             return self.messages[index.row()]
+
+    def setData(self, index, role, value):
+        self._size[index.row()]
 
     def rowCount(self, index):
         return len(self.messages)
@@ -327,6 +372,17 @@ class MainWindow(QMainWindow):
 		self.button1.setStyleSheet("background-color: white;  color:black; border: 1px solid gray; padding:5px 10px")
 		self.button2.setStyleSheet("background-color: black;  color:white; border: 1px solid gray; padding:5px 10px")
 		
+		#Solmenu widgetlari olustur
+		self.text1 = textboxdrag(parent = self)
+		self.treeView = QTreeView()
+		self.treeView.setDragEnabled(True)
+		self.treeView.setSelectionMode(QAbstractItemView.SingleSelection)
+		self.treeView.setDropIndicatorShown(True)
+		self.model = QStandardItemModel()
+		self.addItems(self.model, raw_data)
+		self.treeView.setModel(self.model)
+		self.model.setHorizontalHeaderLabels([self.tr("Object")])
+		
 		#Chatbox buton ve textbox
 		layout3 = QVBoxLayout()
 		self.chatboxtext = QListView()
@@ -358,6 +414,8 @@ class MainWindow(QMainWindow):
 		layout2.addWidget(self.button1)
 		layout2.addWidget(self.button2)
 		layout1.addLayout(layout2)
+		layout.addWidget(self.treeView)
+		layout.addWidget(self.text1)
 		layout.addLayout(layout1)
 		layout.addLayout(layout3)
 		#Ana widget ekleme, layoutu bu widgeta ekleme, ve metin kutusunu bu widgeta yerlestirme
@@ -519,6 +577,17 @@ class MainWindow(QMainWindow):
 		#Basligi yenile ve pencereyi goster
 		self.update_title()
 		self.show()
+	
+	#Treeview item ekleme
+	def addItems(self, parent, elements):
+		for x in elements:
+			if type(elements[x]) == dict:
+				item = QStandardItem(x)
+				parent.appendRow(item)
+				self.addItems(item, elements[x])
+			else:
+				item = QStandardItem(elements[x])
+				parent.appendRow(item)
 	
 	#Chatbox send message
 	def checkbox_sent(self):
@@ -788,6 +857,11 @@ class MainWindow(QMainWindow):
 
 	#Program baslangic
 if __name__ == '__main__':
+	
+	#Solmenu icin veri topla
+	file = open("solmenu.json", "r")
+	raw_data = json.load(file)
+	file.close()
 	
 	#Gerekli klasorler bulunmuyorsa bu klasorleri olustur
 	if not os.path.exists('log'):
