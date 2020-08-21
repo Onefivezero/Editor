@@ -365,7 +365,7 @@ class MainWindow(QMainWindow):
 		layout = QHBoxLayout()
 		layout1 = QVBoxLayout()
 		layout2 = QHBoxLayout()
-		self.editor = QPlainTextEdit()
+		self.editor = textboxdrag(parent = self)
 		self.editor.installEventFilter(self)
 		self.button1 = QPushButton("Light mode")
 		self.button2 = QPushButton("Dark mode")
@@ -373,7 +373,7 @@ class MainWindow(QMainWindow):
 		self.button2.setStyleSheet("background-color: black;  color:white; border: 1px solid gray; padding:5px 10px")
 		
 		#Solmenu widgetlari olustur
-		self.text1 = textboxdrag(parent = self)
+		#self.text1 = textboxdrag(parent = self)
 		self.treeView = QTreeView()
 		self.treeView.setDragEnabled(True)
 		self.treeView.setSelectionMode(QAbstractItemView.SingleSelection)
@@ -415,7 +415,7 @@ class MainWindow(QMainWindow):
 		layout2.addWidget(self.button2)
 		layout1.addLayout(layout2)
 		layout.addWidget(self.treeView)
-		layout.addWidget(self.text1)
+		#layout.addWidget(self.text1)
 		layout.addLayout(layout1)
 		layout.addLayout(layout3)
 		#Ana widget ekleme, layoutu bu widgeta ekleme, ve metin kutusunu bu widgeta yerlestirme
